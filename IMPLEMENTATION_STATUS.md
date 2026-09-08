@@ -13,7 +13,7 @@
 
 | Phase | Title | Task Focus | Status | Branch | PR |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **P0** | Reconnaissance & Architecture | Inspect environment, Hermes codebase, ex-skill role, write PRD/TDS & status tracking | **IN_PROGRESS** | `main` | N/A |
+| **P0** | Reconnaissance & Architecture | Inspect environment, Hermes codebase, ex-skill role, write PRD/TDS & status tracking | **COMPLETE** | `main` | N/A |
 | **P1** | Core Foundation & Storage | Data models, SQLite storage layer, baseline fixtures & unit tests | **COMPLETE** | `feature/p1-foundation` | - |
 | **P2** | WhatsApp Ingestion & Normalization | Export parser, message normalization, 2-sided interaction reconstruction | **COMPLETE** | `feature/p2-ingestion` | - |
 | **P3** | Global Communication Style Engine | Style metrics (vocab, Telugu-English code switching, emoji freq, length) | **COMPLETE** | `feature/p3-style-engine` | - |
@@ -25,7 +25,7 @@
 | **P9** | Human Approval Interface | Approval queue for high-risk responses via Telegram/CLI | **COMPLETE** | `feature/p9-approval-queue` | - |
 | **P10** | Continuous Learning Pipeline | Edit delta capture, memory reinforcement, periodic style updates | **COMPLETE** | `feature/p10-continuous-learning` | - |
 | **P11** | Evaluation & Safety Benchmarks | Offline benchmark suite for style accuracy, memory recall & safety | **COMPLETE** | `feature/p11-evaluation` | - |
-| **P12** | Fine-Tuning Data Curation | Curate clean fine-tuning dataset (post-verification phase) | READY | `feature/p12-fine-tuning` | - |
+| **P12** | Fine-Tuning Data Curation | Curate clean fine-tuning dataset (post-verification phase) | **COMPLETE** | `feature/p12-fine-tuning` | - |
 
 ---
 
@@ -42,6 +42,7 @@
 - **P9-T1 (2026-09-09):** Built `HumanApprovalQueue` for enqueuing high-risk messages, retrieving pending items, and processing approval actions (`APPROVE`, `EDIT`, `REJECT`, `REGENERATED`). Verified with `test_approval_queue.py`.
 - **P10-T1 (2026-09-09):** Built `ContinuousLearningPipeline` for recording user edit deltas and indexing approved human edits back into the interaction RAG store. Verified with `test_learning_pipeline.py`.
 - **P11-T1 (2026-09-09):** Built `EvaluationSuite` for offline risk classification safety benchmark and scenario accuracy validation. Verified with `test_eval_suite.py`.
+- **P12-T1 (2026-09-09):** Implemented `build_fine_tuning_dataset` for curating structured OpenAI SFT datasets from verified two-sided interaction tuples and global style prompts. Verified with `test_dataset_curator.py`.
 
 ---
 
