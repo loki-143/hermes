@@ -20,7 +20,7 @@
 | **P4** | Person-Specific Relationship Profiles | Contact profile generator, formality classifier, addressing terms | **COMPLETE** | `feature/p4-relationship-profiles` | - |
 | **P5** | Hermes Memory Provider | Custom `MemoryProvider` for semantic/episodic facts & temporal events | **COMPLETE** | `feature/p5-memory-provider` | - |
 | **P6** | Historical Interaction RAG | FTS5/Vector similarity engine for past interaction tuples | **COMPLETE** | `feature/p6-interaction-rag` | - |
-| **P7** | Hermes Orchestration & Context Engine | Prompt assembler, turn context builder, cache-stable prompt integration | READY | `feature/p7-hermes-orchestration` | - |
+| **P7** | Hermes Orchestration & Context Engine | Prompt assembler, turn context builder, cache-stable prompt integration | **COMPLETE** | `feature/p7-hermes-orchestration` | - |
 | **P8** | Risk Engine & Decision Gate | High-risk detector (financial, legal, commitments) & auto-send policy | READY | `feature/p8-risk-engine` | - |
 | **P9** | Human Approval Interface | Approval queue for high-risk responses via Telegram/CLI | READY | `feature/p9-approval-queue` | - |
 | **P10** | Continuous Learning Pipeline | Edit delta capture, memory reinforcement, periodic style updates | READY | `feature/p10-continuous-learning` | - |
@@ -37,6 +37,7 @@
 - **P4-T1 (2026-09-09):** Implemented Person-Specific Relationship Engine (`analyze_relationship_profile`), classifying formality score, contact category (`close_friend`, `formal_professional`, `family`, `acquaintance`), and preferred greetings. Verified with `test_relationship_engine.py`.
 - **P5-T1 (2026-09-09):** Created pluggable `WhatsAppMemoryProvider` supporting fact/episodic memory storage, prefetching by contact ID, and memory lifetime management. Verified with `test_memory_provider.py`.
 - **P6-T1 (2026-09-09):** Built Historical Interaction RAG subsystem (`InteractionRAG`) using SQLite FTS5 for 2-sided interaction indexing and contextually relevant past response retrieval. Verified with `test_interaction_rag.py`.
+- **P7-T1 (2026-09-09):** Implemented `ContextAssembler` for prompt building and turn context assembly, maintaining exact TDS context hierarchy (`SYSTEM RULES` -> `GLOBAL STYLE` -> `CONTACT RELATIONSHIP` -> `MEMORIES` -> `SIMILAR PAST INTERACTIONS` -> `RECENT CONVERSATION` -> `CURRENT MESSAGE`). Verified with `test_context_assembler.py`.
 
 ---
 
