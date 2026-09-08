@@ -15,7 +15,7 @@
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **P0** | Reconnaissance & Architecture | Inspect environment, Hermes codebase, ex-skill role, write PRD/TDS & status tracking | **IN_PROGRESS** | `main` | N/A |
 | **P1** | Core Foundation & Storage | Data models, SQLite storage layer, baseline fixtures & unit tests | **COMPLETE** | `feature/p1-foundation` | - |
-| **P2** | WhatsApp Ingestion & Normalization | Export parser, message normalization, 2-sided interaction reconstruction | READY | `feature/p2-ingestion` | - |
+| **P2** | WhatsApp Ingestion & Normalization | Export parser, message normalization, 2-sided interaction reconstruction | **COMPLETE** | `feature/p2-ingestion` | - |
 | **P3** | Global Communication Style Engine | Style metrics (vocab, Telugu-English code switching, emoji freq, length) | READY | `feature/p3-style-engine` | - |
 | **P4** | Person-Specific Relationship Profiles | Contact profile generator, formality classifier, addressing terms | READY | `feature/p4-relationship-profiles` | - |
 | **P5** | Hermes Memory Provider | Custom `MemoryProvider` for semantic/episodic facts & temporal events | READY | `feature/p5-memory-provider` | - |
@@ -32,6 +32,7 @@
 ## Log of Completed Tasks
 - **P0-T1 (2026-09-09):** Performed initial environment reconnaissance. Inspected Hermes v0.21.0, Python 3.11.16, SQLite state.db, existing gateway adapters (WhatsApp Baileys & Cloud API), and memory provider contracts. Created master PRD/TDS specification and implementation tracker.
 - **P1-T1 (2026-09-09):** Built core workspace foundation, SQLite database schema (`contacts`, `normalized_messages`, `reconstructed_interactions`, `memories`, `global_style`, `interactions_fts`), Pydantic models, editable package setup (`pyproject.toml`), and passing pytest test suite (`test_foundation.py`).
+- **P2-T1 (2026-09-09):** Implemented WhatsApp chat export parser (`parse_whatsapp_chat`), message normalization pipeline, and 2-sided interaction reconstruction (`reconstruct_interactions`) pairing incoming contact messages with user responses and context buffers. Validated with `test_ingestion.py`.
 
 ---
 
