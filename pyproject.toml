@@ -12,5 +12,8 @@ dependencies = [
     "sqlite-utils>=3.30"
 ]
 
+[project.scripts]
+whatsapp-agent = "src.cli:main"
+
 [tool.setuptools.packages.find]
 where = ["."]
