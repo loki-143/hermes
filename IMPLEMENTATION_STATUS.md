@@ -17,7 +17,7 @@
 | **P1** | Core Foundation & Storage | Data models, SQLite storage layer, baseline fixtures & unit tests | **COMPLETE** | `feature/p1-foundation` | - |
 | **P2** | WhatsApp Ingestion & Normalization | Export parser, message normalization, 2-sided interaction reconstruction | **COMPLETE** | `feature/p2-ingestion` | - |
 | **P3** | Global Communication Style Engine | Style metrics (vocab, Telugu-English code switching, emoji freq, length) | **COMPLETE** | `feature/p3-style-engine` | - |
-| **P4** | Person-Specific Relationship Profiles | Contact profile generator, formality classifier, addressing terms | READY | `feature/p4-relationship-profiles` | - |
+| **P4** | Person-Specific Relationship Profiles | Contact profile generator, formality classifier, addressing terms | **COMPLETE** | `feature/p4-relationship-profiles` | - |
 | **P5** | Hermes Memory Provider | Custom `MemoryProvider` for semantic/episodic facts & temporal events | READY | `feature/p5-memory-provider` | - |
 | **P6** | Historical Interaction RAG | FTS5/Vector similarity engine for past interaction tuples | READY | `feature/p6-interaction-rag` | - |
 | **P7** | Hermes Orchestration & Context Engine | Prompt assembler, turn context builder, cache-stable prompt integration | READY | `feature/p7-hermes-orchestration` | - |
@@ -34,6 +34,7 @@
 - **P1-T1 (2026-09-09):** Built core workspace foundation, SQLite database schema (`contacts`, `normalized_messages`, `reconstructed_interactions`, `memories`, `global_style`, `interactions_fts`), Pydantic models, editable package setup (`pyproject.toml`), and passing pytest test suite (`test_foundation.py`).
 - **P2-T1 (2026-09-09):** Implemented WhatsApp chat export parser (`parse_whatsapp_chat`), message normalization pipeline, and 2-sided interaction reconstruction (`reconstruct_interactions`) pairing incoming contact messages with user responses and context buffers. Validated with `test_ingestion.py`.
 - **P3-T1 (2026-09-09):** Built Global Communication Style Engine (`extract_style_metrics`), capturing vocabulary frequency, Telugu-English code-switching ratio, slang patterns, emoji distribution, sentence length, and punctuation habits. Verified with `test_style_engine.py`.
+- **P4-T1 (2026-09-09):** Implemented Person-Specific Relationship Engine (`analyze_relationship_profile`), classifying formality score, contact category (`close_friend`, `formal_professional`, `family`, `acquaintance`), and preferred greetings. Verified with `test_relationship_engine.py`.
 
 ---
 
