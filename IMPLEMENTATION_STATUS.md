@@ -23,7 +23,7 @@
 | **P7** | Hermes Orchestration & Context Engine | Prompt assembler, turn context builder, cache-stable prompt integration | **COMPLETE** | `feature/p7-hermes-orchestration` | - |
 | **P8** | Risk Engine & Decision Gate | High-risk detector (financial, legal, commitments) & auto-send policy | **COMPLETE** | `feature/p8-risk-engine` | - |
 | **P9** | Human Approval Interface | Approval queue for high-risk responses via Telegram/CLI | **COMPLETE** | `feature/p9-approval-queue` | - |
-| **P10** | Continuous Learning Pipeline | Edit delta capture, memory reinforcement, periodic style updates | READY | `feature/p10-continuous-learning` | - |
+| **P10** | Continuous Learning Pipeline | Edit delta capture, memory reinforcement, periodic style updates | **COMPLETE** | `feature/p10-continuous-learning` | - |
 | **P11** | Evaluation & Safety Benchmarks | Offline benchmark suite for style accuracy, memory recall & safety | READY | `feature/p11-evaluation` | - |
 | **P12** | Fine-Tuning Data Curation | Curate clean fine-tuning dataset (post-verification phase) | READY | `feature/p12-fine-tuning` | - |
 
@@ -40,6 +40,7 @@
 - **P7-T1 (2026-09-09):** Implemented `ContextAssembler` for prompt building and turn context assembly, maintaining exact TDS context hierarchy (`SYSTEM RULES` -> `GLOBAL STYLE` -> `CONTACT RELATIONSHIP` -> `MEMORIES` -> `SIMILAR PAST INTERACTIONS` -> `RECENT CONVERSATION` -> `CURRENT MESSAGE`). Verified with `test_context_assembler.py`.
 - **P8-T1 (2026-09-09):** Implemented Risk Engine & Decision Gate (`evaluate_response_risk`), classifying incoming messages & generated candidate responses into `AUTO_SEND`, `REVIEW`, and `HUMAN_ONLY` decisions. Verified with `test_risk_engine.py`.
 - **P9-T1 (2026-09-09):** Built `HumanApprovalQueue` for enqueuing high-risk messages, retrieving pending items, and processing approval actions (`APPROVE`, `EDIT`, `REJECT`, `REGENERATED`). Verified with `test_approval_queue.py`.
+- **P10-T1 (2026-09-09):** Built `ContinuousLearningPipeline` for recording user edit deltas and indexing approved human edits back into the interaction RAG store. Verified with `test_learning_pipeline.py`.
 
 ---
 
