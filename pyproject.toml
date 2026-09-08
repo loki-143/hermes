@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "whatsapp-agent"
+version = "0.1.0"
+description = "Personal WhatsApp Communication Agent for Hermes Agent"
+authors = [{ name = "Hermes Agent", email = "hermes@nousresearch.com" }]
+dependencies = [
+    "pydantic>=2.0.0",
+    "sqlite-utils>=3.30"
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
