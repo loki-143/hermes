@@ -10,6 +10,7 @@ class ApprovalItem(BaseModel):
     candidate_response: str
     edited_response: Optional[str] = None
     risk_level: str
+    reason: Optional[str] = None
     status: str = "PENDING"  # PENDING, APPROVED, EDITED, REJECTED, REGENERATED
     created_at: Optional[datetime] = None
 

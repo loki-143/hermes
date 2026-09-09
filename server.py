@@ -1,25 +1,18 @@
 import os
 import sqlite3
 from flask import Flask, render_template_string, request, jsonify
-from src.db import init_db
-from src.ingestion import parse_whatsapp_chat, reconstruct_interactions
-from src.relationship_engine import analyze_relationship_profile
-from src.interaction_rag import InteractionRAG
-from src.models import ContactProfile
-from src.context_assembler import ContextAssembler
-from src.risk_engine import evaluate_response_risk
+from src.whatsapp_gateway import WhatsAppGatewayHandler
 
 app = Flask(__name__)
 DB_PATH = "live_whatsapp.db"
 
-# HTML & Tailwind CSS single page web UI
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp Personal Communication Agent</title>
+    <title>WhatsApp Personal Communication Agent Gateway</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 </head>
@@ -33,65 +26,50 @@ HTML_TEMPLATE = """
                     <i class="fab fa-whatsapp"></i>
                 </div>
                 <div>
-                    <h1 class="text-xl font-bold text-white">Personal Communication Agent</h1>
-                    <p class="text-xs text-slate-400">TDS Engine & RAG Interaction Simulator</p>
+                    <h1 class="text-xl font-bold text-white">WhatsApp Gateway & Routing Engine</h1>
+                    <p class="text-xs text-slate-400">Dynamic Contact Skill Dispatcher & Learning System</p>
                 </div>
             </div>
             <div class="flex items-center space-x-2">
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                    <span class="w-1.5 h-1.5 mr-1.5 rounded-full bg-emerald-400 animate-pulse"></span> RAG Loaded
+                    <span class="w-1.5 h-1.5 mr-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Dynamic Gateway Active
                 </span>
             </div>
         </header>
 
-        <!-- Stats Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div class="bg-slate-800/60 border border-slate-700/50 p-4 rounded-xl">
-                <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Contact Profile</div>
-                <div class="text-lg font-bold text-emerald-400 mt-1" id="contact-name">Abhiii 😊</div>
-                <div class="text-xs text-slate-400" id="contact-category">Category: Close Friend</div>
-            </div>
-            <div class="bg-slate-800/60 border border-slate-700/50 p-4 rounded-xl">
-                <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Parsed History</div>
-                <div class="text-lg font-bold text-blue-400 mt-1">3,661 Messages</div>
-                <div class="text-xs text-slate-400">682 Interaction Tuples</div>
-            </div>
-            <div class="bg-slate-800/60 border border-slate-700/50 p-4 rounded-xl">
-                <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Formality Score</div>
-                <div class="text-lg font-bold text-amber-400 mt-1">0.10 / 1.0</div>
-                <div class="text-xs text-slate-400">Slang & Telugu Code-Switching</div>
-            </div>
-            <div class="bg-slate-800/60 border border-slate-700/50 p-4 rounded-xl">
-                <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Top Emojis</div>
-                <div class="text-lg font-bold text-purple-400 mt-1">🥲 🫠 🙂 😭 😂</div>
-                <div class="text-xs text-slate-400">Learned Style Vocabulary</div>
-            </div>
-        </div>
-
-        <!-- Main Section -->
+        <!-- Main Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             
-            <!-- Left Column: Test Playground -->
+            <!-- Left Column: WhatsApp Message Simulator -->
             <div class="lg:col-span-7 bg-slate-800/40 border border-slate-700/50 rounded-2xl p-5 space-y-4">
                 <h2 class="text-md font-semibold text-slate-200 flex items-center space-x-2">
-                    <i class="fas fa-[#00ff88] fa-paper-plane text-emerald-400"></i>
-                    <span>Simulate Incoming Message</span>
+                    <i class="fas fa-paper-plane text-emerald-400"></i>
+                    <span>Simulate Inbound Gateway Message</span>
                 </h2>
 
-                <form id="sim-form" class="space-y-4">
+                <form id="gw-form" class="space-y-4">
                     <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Incoming Message from Abhiii:</label>
-                        <input type="text" id="incoming_text" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 transition" value="Bro fast gaa rammey center ki">
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Select Sender Contact:</label>
+                        <select id="contact_name" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 transition">
+                            <option value="Frndu" selected>Frndu (40,961 messages - lokesh-frndu-persona skill)</option>
+                            <option value="Abhiii">Abhiii (3,661 messages - lokesh-abhiii-persona skill)</option>
+                            <option value="Rahul">Rahul (New Contact - Auto Learning Engine)</option>
+                        </select>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Candidate Response (Agent / User):</label>
-                        <input type="text" id="candidate_text" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 transition" value="Ostha ra 5 mins lo 😂">
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Incoming Message Text:</label>
+                        <input type="text" id="incoming_text" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 transition" value="Rey cheppu raww... em chesthunnav?">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Candidate Generated Reply:</label>
+                        <input type="text" id="candidate_text" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 transition" value="em ledhu ra... work lo unna 🫠">
                     </div>
 
                     <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-semibold py-3 rounded-xl transition flex items-center justify-center space-x-2 text-sm shadow-lg shadow-emerald-900/30">
-                        <i class="fas fa-[#00ff88] fa-bolt"></i>
-                        <span>Evaluate & Retrieve RAG Context</span>
+                        <i class="fas fa-bolt"></i>
+                        <span>Process via Gateway Router</span>
                     </button>
                 </form>
 
@@ -99,37 +77,39 @@ HTML_TEMPLATE = """
                 <div id="result-container" class="hidden space-y-4 pt-2">
                     <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-700 space-y-3">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Risk Decision</span>
-                            <span id="risk-badge" class="px-3 py-1 rounded-full text-xs font-bold"></span>
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Gateway Processing Result</span>
+                            <span id="status-badge" class="px-3 py-1 rounded-full text-xs font-bold"></span>
                         </div>
-                        <div class="text-xs text-slate-300">
-                            <strong>Reason:</strong> <span id="risk-reason" class="text-slate-400"></span>
+
+                        <div>
+                            <div class="text-xs font-semibold text-slate-400 mb-1">Outbound Message Payload:</div>
+                            <pre id="outbound-text" class="bg-slate-950 p-3 rounded-xl text-xs text-emerald-400 font-mono whitespace-pre-wrap border border-slate-800"></pre>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Right Column: RAG Matches & TDS Prompt Inspector -->
+            <!-- Right Column: RAG Few-Shot Matches & Prompt Inspector -->
             <div class="lg:col-span-5 space-y-6">
                 
                 <!-- RAG Context -->
                 <div class="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-5 space-y-3">
                     <h2 class="text-md font-semibold text-slate-200 flex items-center space-x-2">
-                        <i class="fas fa-[#00ff88] fa-database text-blue-400"></i>
-                        <span>Historical RAG Context Matches</span>
+                        <i class="fas fa-database text-blue-400"></i>
+                        <span>Dynamic RAG Few-Shot Matches</span>
                     </h2>
                     <div id="rag-matches" class="space-y-2 text-xs text-slate-400">
-                        <p class="italic text-slate-500">Run a simulation to view historical match pairs from chat logs...</p>
+                        <p class="italic text-slate-500">Submit a simulation to view matched turns from chat history...</p>
                     </div>
                 </div>
 
-                <!-- TDS Prompt Assembly -->
+                <!-- Assembled Instruction -->
                 <div class="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-5 space-y-3">
                     <h2 class="text-md font-semibold text-slate-200 flex items-center space-x-2">
-                        <i class="fas fa-[#00ff88] fa-layer-group text-purple-400"></i>
-                        <span>TDS Assembled System Prompt</span>
+                        <i class="fas fa-layer-group text-purple-400"></i>
+                        <span>Assembled Dynamic Prompt</span>
                     </h2>
-                    <pre id="system-prompt" class="bg-slate-950 p-3 rounded-xl text-[11px] text-slate-300 font-mono overflow-x-auto max-h-64 border border-slate-800">Run a simulation to view assembled TDS context...</pre>
+                    <pre id="system-prompt" class="bg-slate-950 p-3 rounded-xl text-[11px] text-slate-300 font-mono overflow-x-auto max-h-64 border border-slate-800">Submit a simulation to view in-context prompt...</pre>
                 </div>
 
             </div>
@@ -137,76 +117,81 @@ HTML_TEMPLATE = """
     </div>
 
     <script>
-        document.getElementById('sim-form').addEventListener('submit', async (e) => {
+        document.getElementById('gw-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const incoming = document.getElementById('incoming_text').value;
-            const candidate = document.getElementById('candidate_text').value;
+            const contact_name = document.getElementById('contact_name').value;
+            const incoming_text = document.getElementById('incoming_text').value;
+            const candidate_text = document.getElementById('candidate_text').value;
 
-            const res = await fetch('/api/simulate', {
+            const res = await fetch('/api/gateway-process', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({incoming, candidate})
+                body: JSON.stringify({contact_name, incoming_text, candidate_text})
             });
 
             const data = await res.json();
             
-            // Risk Badge
-            const badge = document.getElementById('risk-badge');
-            badge.innerText = data.risk.decision + " (" + data.risk.risk_level.toUpperCase() + ")";
-            if (data.risk.decision === 'AUTO_SEND') {
+            // Status Badge
+            const badge = document.getElementById('status-badge');
+            badge.innerText = data.gateway_result.status;
+            if (data.gateway_result.status === 'AUTO_SENT') {
                 badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
-            } else if (data.risk.decision === 'REVIEW') {
-                badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30";
             } else {
-                badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30";
+                badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30";
             }
 
-            document.getElementById('risk-reason').innerText = data.risk.reason;
+            document.getElementById('outbound-text').innerText = data.gateway_result.outbound_text;
             document.getElementById('result-container').classList.remove('hidden');
 
             // RAG Matches
             const ragDiv = document.getElementById('rag-matches');
-            if (data.rag_matches.length > 0) {
+            if (data.rag_matches && data.rag_matches.length > 0) {
                 ragDiv.innerHTML = data.rag_matches.map(m => `
                     <div class="p-3 bg-slate-900 rounded-xl border border-slate-800 space-y-1">
                         <div class="text-blue-400 font-semibold">Incoming: "${m.incoming_message}"</div>
-                        <div class="text-emerald-400 font-semibold">Loki (User): "${m.user_response}"</div>
+                        <div class="text-emerald-400 font-semibold">Loki: "${m.user_response}"</div>
                     </div>
                 `).join('');
             } else {
-                ragDiv.innerHTML = '<p class="text-slate-500">No close historical matches found.</p>';
+                ragDiv.innerHTML = '<p class="text-slate-500">No close historical matches found (New contact mode).</p>';
             }
 
-            // Assembled System Prompt
-            document.getElementById('system-prompt').innerText = data.system_prompt;
+            // System Prompt
+            document.getElementById('system-prompt').innerText = data.system_instruction;
         });
     </script>
 </body>
 </html>
 """
 
-from src.dynamic_rag_engine import DynamicRAGEngine
-
 @app.route('/')
 def index():
     return render_template_string(HTML_TEMPLATE)
 
-@app.route('/api/simulate', methods=['POST'])
-def simulate():
+@app.route('/api/gateway-process', methods=['POST'])
+def gateway_process():
     payload = request.json or {}
-    incoming = payload.get('incoming', '')
-    candidate = payload.get('candidate', '')
-    contact = payload.get('contact', 'Frndu')
+    contact_name = payload.get('contact_name', 'Frndu')
+    incoming_text = payload.get('incoming_text', '')
+    candidate_text = payload.get('candidate_text', '')
 
-    dynamic_rag = DynamicRAGEngine(DB_PATH)
-    prompt_data = dynamic_rag.assemble_fewshot_prompt(incoming, contact_id=contact, limit=5)
+    gw = WhatsAppGatewayHandler(db_path=DB_PATH)
+    res = gw.process_incoming_message(
+        contact_name=contact_name,
+        incoming_text=incoming_text,
+        candidate_response=candidate_text
+    )
 
-    risk = evaluate_response_risk(candidate_response=candidate, incoming_message=incoming)
+    prompt_data = gw.dynamic_rag.assemble_fewshot_prompt(
+        incoming_message=incoming_text,
+        contact_id=contact_name,
+        limit=5
+    )
 
     return jsonify({
-        "risk": risk.model_dump(),
+        "gateway_result": res,
         "rag_matches": prompt_data['matched_interactions'],
-        "system_prompt": prompt_data['system_instruction']
+        "system_instruction": prompt_data['system_instruction']
     })
 
 if __name__ == '__main__':
