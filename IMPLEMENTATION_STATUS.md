@@ -44,6 +44,7 @@
 - **P11-T1 (2026-09-09):** Built `EvaluationSuite` for offline risk classification safety benchmark and scenario accuracy validation. Verified with `test_eval_suite.py`.
 - **P12-T1 (2026-09-09):** Implemented `build_fine_tuning_dataset` for curating structured OpenAI SFT datasets from verified two-sided interaction tuples and global style prompts. Verified with `test_dataset_curator.py`.
 - **CLI-T1 (2026-09-09):** Built unified `whatsapp-agent` CLI interface (`src/cli.py`) supporting database initialization, chat export ingestion, prompt context rendering, risk evaluation, approval queue management, offline evaluation, and fine-tuning dataset export. Verified with `test_cli.py` (25/25 total tests passing).
+- **SIM-T1 (2026-09-09):** Added Flask live RAG simulation server (`server.py`), `ex-skill` distillers (`src/ex_skill_distiller.py`, `src/person_skill_distiller.py`), and test suite (`test_skill_distillers.py`). All 27/27 pytest unit tests passing.
 
 ---
 
