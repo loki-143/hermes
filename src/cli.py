@@ -23,6 +23,7 @@ from src.learning_pipeline import ContinuousLearningPipeline
 from src.eval_suite import EvaluationSuite
 from src.dataset_curator import build_fine_tuning_dataset
 from src.dynamic_rag_engine import DynamicRAGEngine
+from src.batch_distill import BatchWhatsAppDistiller
 
 
 def cmd_init_db(args):
@@ -53,6 +54,18 @@ def cmd_ingest(args):
     print(f"Reconstructed {len(interactions)} interaction tuples indexed into RAG.")
     print(f"Relationship category for '{args.contact_name}': {profile.relationship_category} (formality: {profile.formality_score})")
     print(f"Style: Code switching rate = {style_metrics['code_switch_ratio']}, Avg sentence len = {style_metrics['avg_sentence_len']}")
+
+
+def cmd_batch_distill(args):
+    distiller = BatchWhatsAppDistiller(
+        target_dir_or_zip=args.target_path,
+        db_path=args.db_path,
+        user_name=args.user_name
+    )
+    summary = distiller.process_all()
+    print("\n=== BULK DISTILLATION SUMMARY ===")
+    for item in summary:
+        print(f"Contact: {item['contact_name']} -> Status: {item['status']} | Skill: {item.get('skill_name', 'N/A')} | Pairs: {item.get('indexed_interactions', 0)}")
 
 
 def cmd_context(args):
@@ -215,6 +228,12 @@ def main():
     p_ingest.add_argument("--contact-name", default="Contact", help="Contact display name")
     p_ingest.add_argument("--user-name", default="User", help="User's display name in export")
     p_ingest.set_defaults(func=cmd_ingest)
+
+    # batch-distill
+    p_batch = subparsers.add_parser("batch-distill", help="Bulk process directory or zip of WhatsApp exports")
+    p_batch.add_argument("target_path", help="Path to directory or .zip containing chat export .txt files")
+    p_batch.add_argument("--user-name", default="Loki", help="User's name in chat export")
+    p_batch.set_defaults(func=cmd_batch_distill)
 
     # context
     p_context = subparsers.add_parser("context", help="Build system prompt & turn context")
