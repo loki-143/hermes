@@ -107,3 +107,12 @@ def test_cli_export_ft(temp_db, tmp_path, capsys):
     captured = capsys.readouterr()
     assert f"Exported 0 fine-tuning examples to '{out_jsonl}'" in captured.out
     assert os.path.exists(out_jsonl)
+
+
+def test_cli_dynamic_rag(temp_db, capsys):
+    test_args = ["whatsapp-agent", "--db-path", temp_db, "dynamic-rag", "contact_rahul", "Online unnaava?"]
+    with patch("sys.argv", test_args):
+        main()
+    captured = capsys.readouterr()
+    assert "DYNAMIC RAG SYSTEM INSTRUCTION" in captured.out
+    assert "Matched 0 historical interactions" in captured.out

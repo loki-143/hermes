@@ -185,6 +185,8 @@ HTML_TEMPLATE = """
 </html>
 """
 
+from src.dynamic_rag_engine import DynamicRAGEngine
+
 @app.route('/')
 def index():
     return render_template_string(HTML_TEMPLATE)
@@ -194,29 +196,17 @@ def simulate():
     payload = request.json or {}
     incoming = payload.get('incoming', '')
     candidate = payload.get('candidate', '')
+    contact = payload.get('contact', 'Frndu')
 
-    rag = InteractionRAG(DB_PATH)
-    matches = rag.search_similar_interactions(incoming, contact_id='Abhiii', limit=3)
+    dynamic_rag = DynamicRAGEngine(DB_PATH)
+    prompt_data = dynamic_rag.assemble_fewshot_prompt(incoming, contact_id=contact, limit=5)
 
     risk = evaluate_response_risk(candidate_response=candidate, incoming_message=incoming)
 
-    assembler = ContextAssembler()
-    prompt = assembler.build_system_prompt(
-        global_style={"avg_sentence_len": 2.94, "code_switch_ratio": 0.0178, "slang_words": {"em": 40, "ledhu": 18, "sare": 9, "ra": 37}},
-        contact_profile=ContactProfile(
-            contact_id="Abhiii",
-            display_name="Abhiii (Abhinaya)",
-            relationship_category="close_friend",
-            formality_score=0.1,
-            preferred_greetings=['sare', 'ledhu', 'ra'],
-            top_emojis=['🥲', '🫠', '🙂', '😭', '😂']
-        )
-    )
-
     return jsonify({
         "risk": risk.model_dump(),
-        "rag_matches": [m.model_dump() for m in matches],
-        "system_prompt": prompt
+        "rag_matches": prompt_data['matched_interactions'],
+        "system_prompt": prompt_data['system_instruction']
     })
 
 if __name__ == '__main__':

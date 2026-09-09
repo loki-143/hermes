@@ -22,6 +22,7 @@ from src.approval_queue import HumanApprovalQueue, ApprovalItem
 from src.learning_pipeline import ContinuousLearningPipeline
 from src.eval_suite import EvaluationSuite
 from src.dataset_curator import build_fine_tuning_dataset
+from src.dynamic_rag_engine import DynamicRAGEngine
 
 
 def cmd_init_db(args):
@@ -89,6 +90,21 @@ def cmd_context(args):
     print(sys_prompt)
     print("--- TURN CONTEXT ---")
     print(turn_ctx)
+
+
+def cmd_dynamic_rag(args):
+    init_db(args.db_path)
+    engine = DynamicRAGEngine(db_path=args.db_path)
+    res = engine.assemble_fewshot_prompt(
+        incoming_message=args.incoming,
+        contact_id=args.contact_id,
+        limit=args.limit
+    )
+    print("--- DYNAMIC RAG SYSTEM INSTRUCTION ---")
+    print(res["system_instruction"])
+    print("--- DYNAMIC RAG USER PROMPT ---")
+    print(res["user_prompt"])
+    print(f"Matched {len(res['matched_interactions'])} historical interactions.")
 
 
 def cmd_eval_risk(args):
@@ -206,6 +222,13 @@ def main():
     p_context.add_argument("incoming", help="Incoming message text")
     p_context.add_argument("--limit", type=int, default=3, help="Max similar interactions")
     p_context.set_defaults(func=cmd_context)
+
+    # dynamic-rag
+    p_dyn = subparsers.add_parser("dynamic-rag", help="Assemble few-shot dynamic RAG prompt")
+    p_dyn.add_argument("contact_id", help="Contact ID")
+    p_dyn.add_argument("incoming", help="Incoming message text")
+    p_dyn.add_argument("--limit", type=int, default=5, help="Max historical examples")
+    p_dyn.set_defaults(func=cmd_dynamic_rag)
 
     # eval-risk
     p_risk = subparsers.add_parser("eval-risk", help="Evaluate response risk")
