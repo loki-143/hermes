@@ -47,6 +47,7 @@
 - **SIM-T1 (2026-09-09):** Added Flask live RAG simulation server (`server.py`), `ex-skill` distillers (`src/ex_skill_distiller.py`, `src/person_skill_distiller.py`), and test suite (`test_skill_distillers.py`). All 27/27 pytest unit tests passing.
 - **RAG-T1 (2026-09-09):** Added Dynamic Few-Shot RAG Engine (`src/dynamic_rag_engine.py`), enhanced risk engine time-commitment pattern matching (`src/risk_engine.py`), added CLI `dynamic-rag` command, and unit tests (`test_dynamic_rag_engine.py`, `test_cli.py`). All 30/30 pytest unit tests passing.
 - **GW-T1 (2026-09-09):** Added WhatsApp Gateway Routing Engine (`src/whatsapp_gateway.py`), routing to person-specific skills (`lokesh-{contact_slug}-persona`), handling new contact onboarding, continuous RAG indexing, risk interception, and UI simulator integration (`server.py`). Verified with `test_whatsapp_gateway.py` (33/33 total tests passing).
+- **SQL-T1 (2026-09-10):** Added test suite `test_sqlite_msgstore_distiller.py` for direct SQLite `msgstore.db` extraction, contact filtering, skill distillation, and RAG indexing. Verified all 43/43 unit tests passing.
 
 ---
 
