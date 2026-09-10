@@ -1,15 +1,25 @@
 import os
 import json
 import sqlite3
+import threading
 from flask import Flask, render_template_string, request, jsonify
 from src.whatsapp_gateway import WhatsAppGatewayHandler
 from src.telegram_bridge import TelegramGatewayBridge
 from src.telegram_bot_sender import TelegramBotSender
+from src.telegram_bot_listener import TelegramBotListener
 
 app = Flask(__name__)
 DB_PATH = "live_whatsapp.db"
 bot_sender = TelegramBotSender(db_path=DB_PATH)
 bridge = TelegramGatewayBridge(db_path=DB_PATH)
+listener = TelegramBotListener(db_path=DB_PATH)
+
+# Start background Telegram Poller thread
+def run_telegram_poller():
+    listener.start_polling_loop()
+
+poller_thread = threading.Thread(target=run_telegram_poller, daemon=True)
+poller_thread.start()
 
 HTML_TEMPLATE = """
 <!DOCTYPE html>
