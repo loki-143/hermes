@@ -8,7 +8,9 @@ def test_telegram_bot_sender_initialization(tmp_path):
     assert sender.bot_token == "TEST_TOKEN"
     assert sender.chat_id == "5450924116"
 
-def test_telegram_bot_sender_missing_token(tmp_path):
+def test_telegram_bot_sender_missing_token(tmp_path, monkeypatch):
+    monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
+    monkeypatch.delenv("TELEGRAM_TOKEN", raising=False)
     db_file = str(tmp_path / "bot_test2.db")
     queue = HumanApprovalQueue(db_file)
     item = ApprovalItem(
@@ -22,6 +24,7 @@ def test_telegram_bot_sender_missing_token(tmp_path):
     )
     queue.enqueue(item)
 
-    sender = TelegramBotSender(bot_token=None, chat_id="5450924116", db_path=db_file)
+    sender = TelegramBotSender(bot_token="", chat_id="5450924116", db_path=db_file)
+    sender.bot_token = None
     res = sender.send_telegram_card("gate_test_999")
     assert res is None
