@@ -1,10 +1,15 @@
 import os
+import json
 import sqlite3
 from flask import Flask, render_template_string, request, jsonify
 from src.whatsapp_gateway import WhatsAppGatewayHandler
+from src.telegram_bridge import TelegramGatewayBridge
+from src.telegram_bot_sender import TelegramBotSender
 
 app = Flask(__name__)
 DB_PATH = "live_whatsapp.db"
+bot_sender = TelegramBotSender(db_path=DB_PATH)
+bridge = TelegramGatewayBridge(db_path=DB_PATH)
 
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -175,13 +180,16 @@ def gateway_process():
     incoming_text = payload.get('incoming_text', '')
     candidate_text = payload.get('candidate_text', '')
 
-    gw = WhatsAppGatewayHandler(db_path=DB_PATH)
-    res = gw.process_incoming_message(
+    bridge_res = bridge.handle_inbound_whatsapp(
         contact_name=contact_name,
         incoming_text=incoming_text,
         candidate_response=candidate_text
     )
 
+    if bridge_res['action'] == 'TELEGRAM_NOTIFY_AND_HOLD':
+        bot_sender.send_telegram_card(bridge_res['queue_id'])
+
+    gw = WhatsAppGatewayHandler(db_path=DB_PATH)
     prompt_data = gw.dynamic_rag.assemble_fewshot_prompt(
         incoming_message=incoming_text,
         contact_id=contact_name,
@@ -189,7 +197,11 @@ def gateway_process():
     )
 
     return jsonify({
-        "gateway_result": res,
+        "gateway_result": {
+            "status": "APPROVAL_REQUIRED" if bridge_res['action'] == 'TELEGRAM_NOTIFY_AND_HOLD' else "AUTO_SENT",
+            "outbound_text": bridge_res['whatsapp_response'] or f"⚠️ Held for approval. Card delivered to Telegram.\n\n{bridge_res['telegram_payload']['text']}",
+            "queue_id": bridge_res.get('queue_id')
+        },
         "rag_matches": prompt_data['matched_interactions'],
         "system_instruction": prompt_data['system_instruction']
     })
