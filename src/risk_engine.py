@@ -17,7 +17,7 @@ HIGH_RISK_KEYWORDS = {
 MEDIUM_RISK_KEYWORDS = {
     "meeting", "appointment", "schedule", "deadline", "submit", "confirm",
     "location", "address", "call", "discuss", "ready", "time", "pm", "am",
-    "today", "tomorrow", "tonight", "reach", "come"
+    "today", "tomorrow", "tonight", "reach", "come", "repu", "kaali", "free"
 }
 
 # Match time expressions (e.g. 5:00, 5pm, 5:30)

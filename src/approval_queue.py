@@ -40,11 +40,17 @@ class HumanApprovalQueue:
     def enqueue(self, item: ApprovalItem):
         conn = sqlite3.connect(self.db_path)
         cur = conn.cursor()
+        # Add reason column if not exists
+        try:
+            cur.execute("ALTER TABLE approval_queue ADD COLUMN reason TEXT")
+        except Exception:
+            pass
+
         cur.execute("""
             INSERT OR REPLACE INTO approval_queue (
                 queue_id, contact_id, incoming_message, candidate_response,
-                edited_response, risk_level, status, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                edited_response, risk_level, reason, status, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             item.queue_id,
             item.contact_id,
@@ -52,11 +58,37 @@ class HumanApprovalQueue:
             item.candidate_response,
             item.edited_response,
             item.risk_level,
+            item.reason,
             item.status,
             item.created_at or datetime.now()
         ))
         conn.commit()
         conn.close()
+
+    def get_item(self, queue_id: str) -> Optional[ApprovalItem]:
+        conn = sqlite3.connect(self.db_path)
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT queue_id, contact_id, incoming_message, candidate_response,
+                   edited_response, risk_level, reason, status, created_at
+            FROM approval_queue
+            WHERE queue_id = ?
+        """, (queue_id,))
+        row = cur.fetchone()
+        conn.close()
+        if not row:
+            return None
+        return ApprovalItem(
+            queue_id=row[0],
+            contact_id=row[1],
+            incoming_message=row[2],
+            candidate_response=row[3],
+            edited_response=row[4],
+            risk_level=row[5],
+            reason=row[6],
+            status=row[7],
+            created_at=datetime.fromisoformat(row[8]) if isinstance(row[8], str) else row[8]
+        )
 
     def get_pending_items(self) -> List[ApprovalItem]:
         conn = sqlite3.connect(self.db_path)
