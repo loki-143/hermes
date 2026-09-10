@@ -17,11 +17,12 @@ logger = logging.getLogger(__name__)
 
 class TelegramBotListener:
     """
-    Background Listener for Telegram Bot API Callback Queries & Custom Replies.
-    - Listens for inline keyboard button taps (approve / custom).
-    - Immediately answers Telegram callback queries (clearing loading spinner).
-    - Resolves WhatsApp contact JID and posts approved messages to Baileys bridge (http://localhost:3000/send).
-    - Updates Telegram card status to show delivery confirmation.
+    Dedicated Long-Polling Listener for Telegram Approval Bot.
+    - Polls callback queries (button clicks) and custom text messages directly over HTTPS.
+    - Operates completely independently without webhooks or public tunnels.
+    - Immediately answers callback queries (clearing loading spinners).
+    - Posts approved messages to WhatsApp via local Baileys bridge (http://localhost:3000/send).
+    - Edits Telegram approval cards to confirm delivery status.
     """
     def __init__(self, bot_token: Optional[str] = None, db_path: str = "live_whatsapp.db", bridge_url: str = "http://localhost:3000"):
         self.db_path = db_path
@@ -31,7 +32,7 @@ class TelegramBotListener:
         self.rag = InteractionRAG(db_path)
         self.learning = ContinuousLearningPipeline(self.rag)
         
-        # Load env file if needed
+        # Load environment variables
         env_file = Path("/home/lokesh/projects/whatsapp-agent/.env")
         if env_file.exists():
             with open(env_file, "r") as f:
@@ -52,7 +53,6 @@ class TelegramBotListener:
         clean = re.sub(r'[^0-9]', '', cid)
         if clean:
             return f"{clean}@s.whatsapp.net"
-        # Database lookup if given a display name like 'Frndu'
         try:
             conn = sqlite3.connect(self.db_path)
             cur = conn.cursor()
@@ -85,35 +85,6 @@ class TelegramBotListener:
             "callback_query_id": callback_query_id,
             "text": text
         })
-
-    def setup_webhook(self, public_url: Optional[str] = None) -> bool:
-        """
-        Auto-registers the Telegram Webhook URL with Telegram API.
-        Attempts to read public_url param, env var PUBLIC_URL, or /tmp/tunnel.log automatically.
-        """
-        url = public_url or os.getenv("PUBLIC_URL")
-        if not url and Path("/tmp/tunnel.log").exists():
-            try:
-                text = Path("/tmp/tunnel.log").read_text()
-                matches = re.findall(r'https://[a-zA-Z0-9-]+\.trycloudflare\.com', text)
-                if matches:
-                    url = matches[-1]
-            except Exception:
-                pass
-        
-        if not url:
-            logger.warning("No public URL found for Telegram Webhook setup.")
-            return False
-
-        webhook_endpoint = f"{url.rstrip('/')}/telegram_webhook"
-        res = self._api_call("setWebhook", {"url": webhook_endpoint})
-        if res and res.get("ok"):
-            logger.info("Telegram Webhook successfully set to %s", webhook_endpoint)
-            print(f"✅ Telegram Webhook set to: {webhook_endpoint}")
-            return True
-        else:
-            logger.error("Failed to set Telegram Webhook: %s", res)
-            return False
 
     def edit_message_text(self, chat_id: Any, message_id: int, text: str):
         self._api_call("editMessageText", {
@@ -157,12 +128,11 @@ class TelegramBotListener:
             msg_id = msg.get("message_id")
             chat_id = msg.get("chat", {}).get("id")
 
-            # Answer query immediately to clear loading animation
+            # Answer query immediately to clear loading spinner on mobile/desktop
             self.answer_callback_query(cb_id, "Action received!")
 
             if cb_data.startswith("approve_"):
                 parts = cb_data.split("_")
-                # Format: approve_gate_contact_timestamp_optidx
                 opt_idx = int(parts[-1]) if parts[-1].isdigit() else 1
                 queue_id = "_".join(parts[1:-1])
 
@@ -179,7 +149,7 @@ class TelegramBotListener:
                     self.queue.update_status(queue_id, "APPROVE")
                     self.learning.record_human_edit_delta(item, chosen_reply)
 
-                    # Update Telegram Card text
+                    # Update Telegram Card text with confirmation
                     status_text = "✅ DELIVERED TO WHATSAPP" if sent_ok else "⚠️ QUEUED FOR WHATSAPP DELIVERY"
                     updated_card = (
                         f"{status_text}\n"
@@ -246,13 +216,13 @@ class TelegramBotListener:
 
     def start_polling_loop(self):
         self.running = True
-        logger.info("Starting Telegram Bot Listener polling loop...")
+        logger.info("Starting Dedicated Telegram Approval Bot Polling Loop...")
+        print("🚀 Dedicated Telegram Approval Bot Poller active! (No tunnels required)")
         while self.running:
             self.poll_once()
             time.sleep(1)
 
 if __name__ == "__main__":
     listener = TelegramBotListener()
-    print("Running Telegram Bot Listener one-shot poll...")
-    listener.poll_once()
-    print("Done.")
+    print("Running Telegram Approval Bot polling loop...")
+    listener.start_polling_loop()
