@@ -97,7 +97,7 @@ class TelegramBotListener:
                 text = Path("/tmp/tunnel.log").read_text()
                 matches = re.findall(r'https://[a-zA-Z0-9-]+\.trycloudflare\.com', text)
                 if matches:
-                    url = matches[0]
+                    url = matches[-1]
             except Exception:
                 pass
         
@@ -109,6 +109,7 @@ class TelegramBotListener:
         res = self._api_call("setWebhook", {"url": webhook_endpoint})
         if res and res.get("ok"):
             logger.info("Telegram Webhook successfully set to %s", webhook_endpoint)
+            print(f"✅ Telegram Webhook set to: {webhook_endpoint}")
             return True
         else:
             logger.error("Failed to set Telegram Webhook: %s", res)
@@ -188,6 +189,11 @@ class TelegramBotListener:
                         f"📤 *Sent Response:* \"{chosen_reply}\""
                     )
                     self.edit_message_text(chat_id, msg_id, updated_card)
+                else:
+                    self._api_call("sendMessage", {
+                        "chat_id": chat_id,
+                        "text": f"⚠️ Item `{queue_id}` not found in queue. It may have expired or been processed."
+                    })
 
             elif cb_data.startswith("custom_"):
                 parts = cb_data.split("_")
