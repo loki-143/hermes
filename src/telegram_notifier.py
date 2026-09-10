@@ -17,30 +17,48 @@ class TelegramApprovalNotifier:
 
     def generate_candidate_options(self, incoming_message: str, contact_id: str) -> List[str]:
         """
-        Generates 2-3 contextual candidate choices (Yes/No/Tentative) in Loki's authentic style.
+        Generates 3 contextual candidate choices tailored specifically to the incoming message topic.
         """
         lower_inc = incoming_message.lower()
 
-        # Availability / Scheduling queries (e.g. repu 9 ki kaali eh na)
-        if any(w in lower_inc for w in ["kaali", "free", "repu", "9", "time", "ready", "eldhama"]):
+        # 1. Activity / Greeting / Casual Inquiry ("Em chestunnav ra", "em chestunnav", "wassup")
+        if any(w in lower_inc for w in ["em chestunnav", "em chestav", "em chestunav", "wassup", "what are you doing"]):
+            return [
+                "Em ledhu ra, work chusthunna... nuvv?",
+                "Chinna project work lo unna ra",
+                "Em ledhu, kaliga unna... cheppu"
+            ]
+
+        # 2. Movie / Outing Plans ("movie", "eldham", "vosthava")
+        elif any(w in lower_inc for w in ["movie", "eldham", "eldhama", "vosthava", "osthava"]):
+            return [
+                "Ha ready eh raa, eppudu eldham?",
+                "Ledhu ra, koncham work unna late avthadhi",
+                "Sarle, plan set chesi cheppu"
+            ]
+
+        # 3. Availability / Scheduling queries ("kaali", "free", "repu", "time")
+        elif any(w in lower_inc for w in ["kaali", "free", "repu", "time"]):
             return [
                 "Ha kaali eh raa... 9 ki ostha",
                 "Ledhu ra, work unna morning... tarvata matladadam",
                 "Sarle, confirm chesi cheptha 10 mins lo"
             ]
-        # Financial / Request queries
-        elif any(w in lower_inc for w in ["money", "rupees", "transfer", "upi"]):
+
+        # 4. Financial / Payment Requests ("money", "rupees", "transfer", "upi", "gpay", "phonepe")
+        elif any(w in lower_inc for w in ["money", "rupees", "transfer", "upi", "gpay", "phonepe", "kotam"]):
             return [
                 "Ha gpay chestha aagu",
                 "Ledhu ra account lo levu ippud",
                 "Enti katha? call cheyyi okasari"
             ]
-        # General Decision queries
+
+        # 5. Default General Contextual Fallback
         else:
             return [
                 "Ha sare raa",
                 "Oddu le ra",
-                "Enti katha?"
+                "Enti katha? cheppu"
             ]
 
     def format_telegram_notification(self, queue_id: str) -> Dict[str, Any]:
