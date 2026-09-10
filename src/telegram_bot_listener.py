@@ -46,12 +46,26 @@ class TelegramBotListener:
         self.running = False
 
     def _to_whatsapp_jid(self, contact_id: str) -> str:
-        clean = re.sub(r'[^0-9]', '', contact_id)
-        if not clean:
-            return contact_id
-        if not clean.endswith("@s.whatsapp.net"):
+        cid = str(contact_id).strip()
+        if cid.endswith("@lid") or cid.endswith("@s.whatsapp.net") or cid.endswith("@g.us"):
+            return cid
+        clean = re.sub(r'[^0-9]', '', cid)
+        if clean:
             return f"{clean}@s.whatsapp.net"
-        return clean
+        # Database lookup if given a display name like 'Frndu'
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cur = conn.cursor()
+            row = cur.execute(
+                "SELECT contact_id FROM reconstructed_interactions WHERE contact_id LIKE ? ORDER BY timestamp DESC LIMIT 1",
+                (f"%{cid}%",)
+            ).fetchone()
+            conn.close()
+            if row and row[0]:
+                return self._to_whatsapp_jid(row[0])
+        except Exception:
+            pass
+        return cid
 
     def _api_call(self, method: str, payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         if not self.bot_token:
