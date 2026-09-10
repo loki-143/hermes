@@ -1,11 +1,35 @@
 import sqlite3
 import re
+import json
+import ast
 from typing import List, Optional
 from src.models import ReconstructedInteraction
 
 def tokenize(text: str) -> set:
     words = re.findall(r'\b\w+\b', text.lower())
     return set(words)
+
+def parse_context_history(raw_val: Optional[object]) -> List[str]:
+    if not raw_val:
+        return []
+    if isinstance(raw_val, list):
+        return raw_val
+    raw_str = str(raw_val).strip()
+    if not raw_str:
+        return []
+    try:
+        res = json.loads(raw_str)
+        if isinstance(res, list):
+            return [str(x) for x in res]
+    except Exception:
+        pass
+    try:
+        res = ast.literal_eval(raw_str)
+        if isinstance(res, list):
+            return [str(x) for x in res]
+    except Exception:
+        pass
+    return []
 
 class InteractionRAG:
     """
@@ -28,7 +52,7 @@ class InteractionRAG:
             interaction.interaction_id,
             interaction.contact_id,
             interaction.incoming_message,
-            str(interaction.context_history),
+            json.dumps(interaction.context_history),
             interaction.user_response,
             interaction.relationship_category,
             interaction.timestamp
@@ -136,7 +160,7 @@ class InteractionRAG:
         for _, _, r in scored[:limit]:
             results.append(ReconstructedInteraction(
                 interaction_id=r[0], contact_id=r[1], incoming_message=r[2],
-                context_history=eval(r[3]) if r[3] and r[3].startswith("[") else [],
+                context_history=parse_context_history(r[3]),
                 user_response=r[4], relationship_category=r[5], timestamp=r[6]
             ))
 

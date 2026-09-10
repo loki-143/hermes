@@ -1,5 +1,6 @@
 import os
 import re
+import json
 import zipfile
 from pathlib import Path
 from typing import List, Dict, Any
@@ -76,9 +77,9 @@ class BatchWhatsAppDistiller:
                         interaction_id, contact_id, incoming_message, context_history,
                         user_response, relationship_category, timestamp
                     ) VALUES (?, ?, ?, ?, ?, ?, ?)
-                """, [(
+                """, [ (
                     inter.interaction_id, inter.contact_id, inter.incoming_message,
-                    str(inter.context_history), inter.user_response,
+                    json.dumps(inter.context_history), inter.user_response,
                     inter.relationship_category, inter.timestamp
                 ) for inter in interactions])
 

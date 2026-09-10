@@ -2,7 +2,16 @@ import pytest
 from datetime import datetime
 from src.db import init_db
 from src.models import ReconstructedInteraction
-from src.interaction_rag import InteractionRAG
+from src.interaction_rag import InteractionRAG, parse_context_history
+
+def test_parse_context_history():
+    assert parse_context_history(None) == []
+    assert parse_context_history("") == []
+    assert parse_context_history(["a", "b"]) == ["a", "b"]
+    assert parse_context_history('["msg1", "msg2"]') == ["msg1", "msg2"]
+    assert parse_context_history("['msg1', 'msg2']") == ["msg1", "msg2"]
+    assert parse_context_history('["Rahul: What\'s up?", "Loki: Nothing bro"]') == ["Rahul: What's up?", "Loki: Nothing bro"]
+    assert parse_context_history("invalid json or python string") == []
 
 @pytest.fixture
 def rag_engine(tmp_path):

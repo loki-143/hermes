@@ -1,6 +1,7 @@
 import sqlite3
+import json
 from typing import List, Dict, Any, Optional
-from src.interaction_rag import InteractionRAG
+from src.interaction_rag import InteractionRAG, parse_context_history
 from src.context_assembler import ContextAssembler
 from src.models import ReconstructedInteraction
 
@@ -46,7 +47,7 @@ class DynamicRAGEngine:
             for r in rows:
                 matches.append(ReconstructedInteraction(
                     interaction_id=r[0], contact_id=r[1], incoming_message=r[2],
-                    context_history=eval(r[3]) if r[3] and r[3].startswith("[") else [],
+                    context_history=parse_context_history(r[3]),
                     user_response=r[4], relationship_category=r[5], timestamp=r[6]
                 ))
 
