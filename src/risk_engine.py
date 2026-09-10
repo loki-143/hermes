@@ -23,8 +23,8 @@ MEDIUM_RISK_KEYWORDS = {
     "eldhama", "oddha", "vosthava", "osthava", "plans", "plan"
 }
 
-# Match time expressions (e.g. 5:00, 5pm, 5:30, 9 ki)
-TIME_PATTERN = re.compile(r"\b\d{1,2}(?::\d{2})?\s*(?:am|pm|ki)?\b", re.IGNORECASE)
+# Match specific time expressions (e.g. 5:00pm, 5:30, 9am, 9pm, repu 9 ki)
+TIME_PATTERN = re.compile(r"\b(?:\d{1,2}:\d{2}\s*(?:am|pm)?|\d{1,2}\s*(?:am|pm))\b", re.IGNORECASE)
 
 RISK_EVALUATION_PROMPT = """
 You are the AI Risk & Decision Gatekeeper for Loki's Personal WhatsApp Agent.
