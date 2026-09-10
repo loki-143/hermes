@@ -184,6 +184,13 @@ HTML_TEMPLATE = """
 def index():
     return render_template_string(HTML_TEMPLATE)
 
+@app.route('/telegram_webhook', methods=['POST'])
+def telegram_webhook():
+    update = request.get_json(force=True, silent=True)
+    if update:
+        listener.process_update(update)
+    return jsonify({"status": "ok"})
+
 @app.route('/api/gateway-process', methods=['POST'])
 def gateway_process():
     payload = request.json or {}
