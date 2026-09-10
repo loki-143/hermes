@@ -14,6 +14,12 @@ bot_sender = TelegramBotSender(db_path=DB_PATH)
 bridge = TelegramGatewayBridge(db_path=DB_PATH)
 listener = TelegramBotListener(db_path=DB_PATH)
 
+# Auto-configure Telegram Webhook on startup
+try:
+    listener.setup_webhook()
+except Exception as e:
+    print("Auto webhook setup error:", e)
+
 # Start background Telegram Poller thread if explicitly enabled (to prevent polling conflict with Hermes Gateway)
 if os.getenv("ENABLE_TELEGRAM_POLLER", "0").lower() in ("1", "true", "yes"):
     def run_telegram_poller():

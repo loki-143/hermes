@@ -86,6 +86,34 @@ class TelegramBotListener:
             "text": text
         })
 
+    def setup_webhook(self, public_url: Optional[str] = None) -> bool:
+        """
+        Auto-registers the Telegram Webhook URL with Telegram API.
+        Attempts to read public_url param, env var PUBLIC_URL, or /tmp/tunnel.log automatically.
+        """
+        url = public_url or os.getenv("PUBLIC_URL")
+        if not url and Path("/tmp/tunnel.log").exists():
+            try:
+                text = Path("/tmp/tunnel.log").read_text()
+                matches = re.findall(r'https://[a-zA-Z0-9-]+\.trycloudflare\.com', text)
+                if matches:
+                    url = matches[0]
+            except Exception:
+                pass
+        
+        if not url:
+            logger.warning("No public URL found for Telegram Webhook setup.")
+            return False
+
+        webhook_endpoint = f"{url.rstrip('/')}/telegram_webhook"
+        res = self._api_call("setWebhook", {"url": webhook_endpoint})
+        if res and res.get("ok"):
+            logger.info("Telegram Webhook successfully set to %s", webhook_endpoint)
+            return True
+        else:
+            logger.error("Failed to set Telegram Webhook: %s", res)
+            return False
+
     def edit_message_text(self, chat_id: Any, message_id: int, text: str):
         self._api_call("editMessageText", {
             "chat_id": chat_id,
