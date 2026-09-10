@@ -16,6 +16,7 @@ def test_db_initialization(test_db):
     cur = conn.cursor()
     cur.execute("SELECT name FROM sqlite_master WHERE type='table';")
     tables = [row[0] for row in cur.fetchall()]
+    journal_mode = conn.execute("PRAGMA journal_mode;").fetchone()[0]
     conn.close()
     
     assert "contacts" in tables
@@ -24,6 +25,7 @@ def test_db_initialization(test_db):
     assert "memories" in tables
     assert "global_style" in tables
     assert "interactions_fts" in tables
+    assert journal_mode.lower() == "wal"
 
 def test_contact_profile_model():
     contact = ContactProfile(

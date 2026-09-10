@@ -51,7 +51,9 @@ class TelegramBotListener:
         if cid.endswith("@lid") or cid.endswith("@s.whatsapp.net") or cid.endswith("@g.us"):
             return cid
         clean = re.sub(r'[^0-9]', '', cid)
-        if clean:
+        if clean and len(clean) >= 10:
+            if not clean.startswith("91") and len(clean) == 10:
+                clean = "91" + clean
             return f"{clean}@s.whatsapp.net"
         try:
             conn = sqlite3.connect(self.db_path)

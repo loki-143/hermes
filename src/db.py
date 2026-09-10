@@ -4,6 +4,9 @@ def init_db(db_path: str = "whatsapp_agent.db"):
     conn = sqlite3.connect(db_path)
     cur = conn.cursor()
 
+    # Enable Write-Ahead Logging (WAL) for high-concurrency production robustness
+    cur.execute("PRAGMA journal_mode=WAL;")
+
     # Contacts & Relationship Profiles
     cur.execute("""
     CREATE TABLE IF NOT EXISTS contacts (
