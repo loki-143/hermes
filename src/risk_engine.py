@@ -17,10 +17,9 @@ HIGH_RISK_KEYWORDS = {
 }
 
 MEDIUM_RISK_KEYWORDS = {
-    "meeting", "appointment", "schedule", "deadline", "submit", "confirm",
-    "location", "address", "call", "discuss", "ready", "time", "pm", "am",
-    "today", "tomorrow", "tonight", "reach", "come", "repu", "kaali", "free",
-    "eldhama", "oddha", "vosthava", "osthava", "plans", "plan"
+    "meeting", "appointment", "schedule", "deadline", "confirm",
+    "repu", "kaali", "eldhama", "oddha", "vosthava", "osthava", "plans", "plan",
+    "movie ki", "lunch ki", "dinner ki", "tea ki", "coffee ki"
 }
 
 # Match specific time expressions (e.g. 5:00pm, 5:30, 9am, 9pm, repu 9 ki)
