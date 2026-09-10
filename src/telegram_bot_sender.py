@@ -12,7 +12,17 @@ class TelegramBotSender:
     and processes callback button selections.
     """
     def __init__(self, bot_token: Optional[str] = None, chat_id: Optional[str] = None, db_path: str = "live_whatsapp.db"):
-        self.bot_token = bot_token or os.getenv("TELEGRAM_BOT_TOKEN")
+        # Load local .env if env vars not in os.environ
+        from pathlib import Path
+        env_file = Path("/home/lokesh/projects/whatsapp-agent/.env")
+        if env_file.exists():
+            with open(env_file, "r") as f:
+                for line in f:
+                    if "=" in line and not line.startswith("#"):
+                        k, v = line.strip().split("=", 1)
+                        os.environ.setdefault(k, v.strip("\"'"))
+
+        self.bot_token = bot_token or os.getenv("TELEGRAM_BOT_TOKEN") or os.getenv("TELEGRAM_TOKEN")
         self.chat_id = chat_id or os.getenv("TELEGRAM_CHAT_ID", "5450924116")
         self.db_path = db_path
         self.notifier = TelegramApprovalNotifier(db_path=db_path)
