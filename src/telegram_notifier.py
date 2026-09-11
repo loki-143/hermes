@@ -1,9 +1,15 @@
 import json
 import sqlite3
 import datetime
+import re
 from typing import List, Dict, Any, Optional
 from src.approval_queue import HumanApprovalQueue, ApprovalItem
 from src.dynamic_rag_engine import DynamicRAGEngine
+
+def escape_markdown(text: str) -> str:
+    if not text:
+        return ""
+    return re.sub(r'([_*\[\]()~>#+\-=|{}.!\\`])', r'\\\1', str(text))
 
 class TelegramApprovalNotifier:
     """
@@ -15,51 +21,60 @@ class TelegramApprovalNotifier:
         self.queue = HumanApprovalQueue(db_path)
         self.dynamic_rag = DynamicRAGEngine(db_path)
 
-    def generate_candidate_options(self, incoming_message: str, contact_id: str) -> List[str]:
+    def generate_candidate_options(
+        self,
+        incoming_message: str,
+        contact_id: str,
+        candidate_response: Optional[str] = None
+    ) -> List[str]:
         """
-        Generates 3 contextual candidate choices tailored specifically to the incoming message topic.
+        Generates contextual candidate choices tailored specifically to the incoming message topic.
+        If candidate_response is provided, Option 1 is set to the candidate response.
         """
         lower_inc = incoming_message.lower()
 
-        # 1. Activity / Greeting / Casual Inquiry ("Em chestunnav ra", "em chestunnav", "wassup")
         if any(w in lower_inc for w in ["em chestunnav", "em chestav", "em chestunav", "wassup", "what are you doing"]):
-            return [
+            contextual = [
                 "Em ledhu ra, work chusthunna... nuvv?",
                 "Chinna project work lo unna ra",
                 "Em ledhu, kaliga unna... cheppu"
             ]
-
-        # 2. Movie / Outing Plans ("movie", "eldham", "vosthava")
         elif any(w in lower_inc for w in ["movie", "eldham", "eldhama", "vosthava", "osthava"]):
-            return [
+            contextual = [
                 "Ha ready eh raa, eppudu eldham?",
                 "Ledhu ra, koncham work unna late avthadhi",
                 "Sarle, plan set chesi cheppu"
             ]
-
-        # 3. Availability / Scheduling queries ("kaali", "free", "repu", "time")
         elif any(w in lower_inc for w in ["kaali", "free", "repu", "time"]):
-            return [
+            contextual = [
                 "Ha kaali eh raa... 9 ki ostha",
                 "Ledhu ra, work unna morning... tarvata matladadam",
                 "Sarle, confirm chesi cheptha 10 mins lo"
             ]
-
-        # 4. Financial / Payment Requests ("money", "rupees", "transfer", "upi", "gpay", "phonepe")
         elif any(w in lower_inc for w in ["money", "rupees", "transfer", "upi", "gpay", "phonepe", "kotam"]):
-            return [
+            contextual = [
                 "Ha gpay chestha aagu",
                 "Ledhu ra account lo levu ippud",
                 "Enti katha? call cheyyi okasari"
             ]
-
-        # 5. Default General Contextual Fallback
         else:
-            return [
+            contextual = [
                 "Ha sare raa",
                 "Oddu le ra",
                 "Enti katha? cheppu"
             ]
+
+        if candidate_response and candidate_response.strip():
+            clean_cand = candidate_response.strip()
+            # If Option 1 is set to the AI candidate response, update options 2 & 3 to matching contextual choices
+            options = [clean_cand]
+            for opt in contextual:
+                if opt.strip().lower() != clean_cand.lower() and opt not in options:
+                    options.append(opt)
+                if len(options) >= 3:
+                    break
+            return options
+        return contextual
 
     def format_telegram_notification(self, queue_id: str) -> Dict[str, Any]:
         """
@@ -69,15 +84,24 @@ class TelegramApprovalNotifier:
         if not item:
             raise ValueError(f"Queue ID {queue_id} not found")
 
-        options = self.generate_candidate_options(item.incoming_message, item.contact_id)
+        options = self.generate_candidate_options(
+            incoming_message=item.incoming_message,
+            contact_id=item.contact_id,
+            candidate_response=item.candidate_response
+        )
+
+        clean_contact = escape_markdown(item.contact_id)
+        clean_msg = escape_markdown(item.incoming_message)
+        clean_reason = escape_markdown(item.reason or "")
+        clean_candidate = escape_markdown(item.candidate_response)
 
         card_text = (
             f"🚨 *WHATSAPP DECISION INTERCEPTED*\n"
             f"───────────────────────────\n"
-            f"👤 *From Contact:* `{item.contact_id}`\n"
-            f"💬 *Message:* \"{item.incoming_message}\"\n"
-            f"⚠️ *Reason:* {item.reason}\n\n"
-            f"🤖 *AI Candidate Reply:* \"{item.candidate_response}\"\n\n"
+            f"👤 *From Contact:* `{clean_contact}`\n"
+            f"💬 *Message:* \"{clean_msg}\"\n"
+            f"⚠️ *Reason:* {clean_reason}\n\n"
+            f"🤖 *AI Candidate Reply:* \"{clean_candidate}\"\n\n"
             f"👇 *Choose an option or type a custom reply:*"
         )
 

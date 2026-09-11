@@ -1,11 +1,14 @@
 import os
 import re
+import time
+import uuid
 import sqlite3
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, Any, Optional
-from src.db import init_db
-from src.ingestion import NormalizedMessage, ReconstructedInteraction
+import hashlib
+from src.db import init_db, get_db_connection, save_contact_profile
+from src.models import NormalizedMessage, ReconstructedInteraction, ContactProfile
 from src.interaction_rag import InteractionRAG
 from src.dynamic_rag_engine import DynamicRAGEngine
 from src.risk_engine import evaluate_response_risk, RiskDecision
@@ -40,6 +43,22 @@ class WhatsAppGatewayHandler:
             return skill_file
         return None
 
+    def _get_contact_formality_score(self, contact_name: str) -> float:
+        conn = get_db_connection(self.db_path)
+        try:
+            cur = conn.cursor()
+            row = cur.execute(
+                "SELECT formality_score FROM contacts WHERE contact_id = ? OR display_name = ? LIMIT 1",
+                (contact_name, contact_name)
+            ).fetchone()
+            if row and row[0] is not None:
+                return float(row[0])
+        except Exception:
+            pass
+        finally:
+            conn.close()
+        return 0.5
+
     def process_incoming_message(
         self,
         contact_name: str,
@@ -49,11 +68,16 @@ class WhatsAppGatewayHandler:
     ) -> Dict[str, Any]:
         contact_slug = self._get_contact_slug(contact_name)
         skill_path = self._get_person_skill_path(contact_name)
+        formality_score = self._get_contact_formality_score(contact_name)
+
+        # Sanitize incoming text if owner reply prefix is present
+        clean_incoming = incoming_text.replace("[owner reply] ", "").strip() if incoming_text else ""
 
         # 1. Evaluate Risk Gate
         risk: RiskDecision = evaluate_response_risk(
             candidate_response=candidate_response,
-            incoming_message=incoming_text
+            incoming_message=clean_incoming,
+            formality_score=formality_score
         )
 
         # 2. Check if person-specific skill exists
@@ -66,10 +90,29 @@ class WhatsAppGatewayHandler:
             metadata_tag = "[Generated via learning engine (New Contact)]"
             is_known_contact = False
 
+        # Ensure contact entry exists in contacts table
+        conn = get_db_connection(self.db_path)
+        try:
+            cur = conn.cursor()
+            row = cur.execute("SELECT contact_id FROM contacts WHERE contact_id = ? OR display_name = ? LIMIT 1", (contact_name, contact_name)).fetchone()
+            if not row:
+                category = "close_friend" if is_known_contact else "acquaintance"
+                prof = ContactProfile(
+                    contact_id=contact_name,
+                    display_name=contact_name,
+                    relationship_category=category,
+                    formality_score=formality_score
+                )
+                save_contact_profile(prof, db_path=self.db_path)
+        finally:
+            conn.close()
+
         # 3. Handle High / Medium Risk Routing
         if risk.decision != "AUTO_SEND":
+            short_hash = hashlib.md5(f"{contact_slug}_{time.time_ns()}".encode()).hexdigest()[:8]
+            compact_qid = f"q_{int(time.time() * 1000)}_{short_hash}"
             queue_item = ApprovalItem(
-                queue_id=f"gate_{contact_slug}_{int(os.times().elapsed * 1000)}",
+                queue_id=compact_qid,
                 contact_id=contact_name,
                 incoming_message=incoming_text,
                 candidate_response=candidate_response,
@@ -92,7 +135,7 @@ class WhatsAppGatewayHandler:
 
         # 5. Continuous Learning: Index new turn into RAG
         new_interaction = ReconstructedInteraction(
-            interaction_id=f"turn_{contact_slug}_{int(os.times().elapsed * 1000)}",
+            interaction_id=f"turn_{contact_slug}_{int(time.time() * 1000)}_{uuid.uuid4().hex[:6]}",
             contact_id=contact_name,
             incoming_message=incoming_text,
             context_history=recent_history or [],
