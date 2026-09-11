@@ -13,17 +13,25 @@ class RiskDecision(BaseModel):
 HIGH_RISK_KEYWORDS = {
     "money", "pay", "rupees", "transfer", "bank", "account", "otp", "password",
     "contract", "legal", "promise", "guarantee", "buy", "purchase", "sign",
-    "secret", "credentials", "credit card", "debit card"
+    "secret", "credentials", "credit card", "debit card",
+    "upi", "gpay", "phonepe", "paytm", "cash", "qr", "scanner",
+    "dabbu", "dabbulu", "paisal", "paisa", "ifsc",
+    "pampu", "pampinchu", "google pay", "phone pe", "pay tm", "bhim", "cred",
+    "accident", "emergency", "hospital", "police", "danger", "help me", "saving",
+    "thondaraga", "thondara", "urgent"
 }
 
 MEDIUM_RISK_KEYWORDS = {
-    "meeting", "appointment", "schedule", "deadline", "confirm",
-    "repu", "kaali", "eldhama", "oddha", "vosthava", "osthava", "plans", "plan",
-    "movie ki", "lunch ki", "dinner ki", "tea ki", "coffee ki"
+    "meeting", "appointment", "schedule", "deadline", "confirm", "free", "available",
+    "tomorrow", "today", "tonight",
+    "repu", "kaali", "eldhama", "eldham", "oddha", "vosthava", "osthava", "ostava", "vostava", "plans", "plan",
+    "ivvala", "eeroju", "marnadu", "epudu", "eppudu", "udayam", "sayamkalam", "nightki",
+    "movie ki", "movieki", "lunch ki", "lunchki", "dinner ki", "dinnerki", "tea ki", "teaki", "coffee ki", "coffeeki",
+    "bayataki", "bhayataki", "kaludham", "kaluddham", "meet avdham"
 }
 
-# Match specific time expressions (e.g. 5:00pm, 5:30, 9am, 9pm, repu 9 ki)
-TIME_PATTERN = re.compile(r"\b(?:\d{1,2}:\d{2}\s*(?:am|pm)?|\d{1,2}\s*(?:am|pm))\b", re.IGNORECASE)
+# Match specific time expressions (e.g. 5:00pm, 5:30, 9am, 9pm, repu 9 ki, 9 ki, 9pmki, 9:30ki, 10ki)
+TIME_PATTERN = re.compile(r"\b(?:\d{1,2}(?::\d{2})?\s*(?:am|pm)?\s*ki|\d{1,2}:\d{2}\s*(?:am|pm)?|\d{1,2}\s*(?:am|pm))\b", re.IGNORECASE)
 
 RISK_EVALUATION_PROMPT = """
 You are the AI Risk & Decision Gatekeeper for Loki's Personal WhatsApp Agent.
@@ -64,12 +72,23 @@ def evaluate_response_risk(
 
     # 1. Fast Rule Safety Net for High Risk (Financial / Credentials)
     high_matches = [w for w in HIGH_RISK_KEYWORDS if re.search(r"\b" + re.escape(w) + r"\b", combined_text)]
-    if high_matches:
+    has_rupee_shorthand = bool(re.search(r"\b(?:\d+\s*rs|\d+rs|\d+\s*rupees?)\b", combined_text))
+    financial_indicators = ["pampu", "pampinchu", "send", "transfer", "pay", "money", "rupees", "rs", "gpay", "phonepe", "upi", "paytm", "dabbulu", "paisal", "cash", "ifsc", "google pay", "phone pe", "pay tm"]
+    has_k_financial = bool(re.search(r"\b\d+\s*k\b", combined_text) and any(w in combined_text for w in financial_indicators))
+
+    if high_matches or has_rupee_shorthand or has_k_financial:
+        reasons = []
+        if high_matches:
+            reasons.append(f"High-risk topic detected: {', '.join(high_matches)}")
+        if has_rupee_shorthand:
+            reasons.append("Rupee currency shorthand detected")
+        if has_k_financial:
+            reasons.append("Financial amount shorthand detected")
         return RiskDecision(
             decision="HUMAN_ONLY",
             risk_level="high",
             confidence=1.0,
-            reason=f"High-risk topic detected: {', '.join(high_matches)}"
+            reason=" + ".join(reasons)
         )
 
     # 2. LLM AI Risk Evaluator (if function provided)

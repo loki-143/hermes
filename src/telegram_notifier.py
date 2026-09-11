@@ -51,6 +51,12 @@ class TelegramApprovalNotifier:
                 "Ledhu ra, work unna morning... tarvata matladadam",
                 "Sarle, confirm chesi cheptha 10 mins lo"
             ]
+        elif any(w in lower_inc for w in ["accident", "emergency", "hospital", "police", "danger", "help"]):
+            contextual = [
+                "Rey ekkada unnav? Osthunna ipude!",
+                "Em ayindhi ra? Everything fine?",
+                "Rey call chestha undu 1 min"
+            ]
         elif any(w in lower_inc for w in ["money", "rupees", "transfer", "upi", "gpay", "phonepe", "kotam"]):
             contextual = [
                 "Ha gpay chestha aagu",
